@@ -63,7 +63,7 @@ export default function Home() {
 
       <section className="section contact" id="contacto">
         <div className="contact-copy"><p className="section-kicker">Primer contacto</p><h2>Conversemos sobre lo que buscas</h2><p>Completa tus datos básicos y luego prepararemos la consulta para enviarla mediante WhatsApp. No incluyas diagnósticos, fotografías ni antecedentes médicos sensibles.</p><div className="contact-details"><span><Clock3 size={18} /> Respuesta dentro del horario de atención</span><span><LockKeyhole size={18} /> La web no almacena la consulta</span><a href={whatsappBaseUrl} target="_blank" rel="noreferrer"><MessageCircle size={18} /> WhatsApp: {siteContent.contact.whatsappDisplay}</a></div></div>
-        <form onSubmit={handleSubmit} noValidate>
+        <form onSubmit={handleSubmit} action="/#contacto" method="post" noValidate>
           <div className="honeypot" aria-hidden="true"><label>Deja este campo vacío<input name="sitio_web" tabIndex={-1} autoComplete="off" /></label></div>
           <div className="form-grid">
             <label htmlFor="nombre">Nombre<input id="nombre" required name="nombre" autoComplete="name" maxLength={60} placeholder="Tu nombre" /></label>
