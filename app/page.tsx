@@ -1,63 +1,84 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useRef, useState } from 'react';
 import { BadgeCheck, CheckCircle2, Clock3, Droplets, Heart, LockKeyhole, MessageCircle, ScanFace, ShieldCheck, Sparkles, Stethoscope } from 'lucide-react';
+import { siteContent, whatsappBaseUrl } from '@/content/site-content';
 
-const whatsappUrl = 'https://wa.me/56977160198';
-const services = [
-  { title: 'Aplicación facial', description: 'Evaluación de frente, entrecejo, patas de gallo y nariz para suavizar líneas de expresión manteniendo un resultado natural.', icon: ScanFace },
-  { title: 'Bruxismo', description: 'Puede ayudar a disminuir la tensión muscular mandibular y molestias asociadas, siempre tras una evaluación individual.', icon: Heart },
-  { title: 'Hiperhidrosis', description: 'Tratamiento orientado al control de la sudoración excesiva en zonas como axilas y manos.', icon: Droplets },
-  { title: 'Cuello', description: 'Evaluación de bandas musculares del cuello y alternativas para mejorar visualmente el contorno.', icon: Sparkles },
-];
+const serviceIcons = { facial: ScanFace, bruxismo: Heart, hiperhidrosis: Droplets, cuello: Sparkles };
 
 export default function Home() {
-  const [sent, setSent] = useState(false);
-  function handleSubmit(event: FormEvent<HTMLFormElement>) { event.preventDefault(); setSent(true); }
+  const [status, setStatus] = useState<'idle' | 'error' | 'ready'>('idle');
+  const loadedAt = useRef(Date.now());
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    if (String(data.get('sitio_web') ?? '') || Date.now() - loadedAt.current < 2500 || !form.checkValidity()) {
+      setStatus('error');
+      form.reportValidity();
+      return;
+    }
+
+    const nombre = String(data.get('nombre') ?? '').trim().slice(0, 60);
+    const telefono = String(data.get('telefono') ?? '').replace(/[^\d+\s()-]/g, '').trim().slice(0, 24);
+    const interes = String(data.get('interes') ?? '').trim().slice(0, 60);
+    const horario = String(data.get('horario') ?? '').trim().slice(0, 30);
+    const mensaje = String(data.get('mensaje') ?? '').trim().slice(0, 280);
+    const text = [
+      'Hola Daniela, completé el formulario de tu sitio web.', '',
+      `Nombre: ${nombre}`, `Mi WhatsApp: ${telefono}`, `Me interesa: ${interes}`, `Horario preferido: ${horario}`,
+      mensaje ? `Consulta general: ${mensaje}` : null, '',
+      'Entiendo que este contacto no reemplaza una evaluación clínica y que no debo enviar antecedentes médicos sensibles por este medio.',
+    ].filter(Boolean).join('\n');
+
+    setStatus('ready');
+    window.open(`${whatsappBaseUrl}?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+  }
 
   return (
     <main>
       <header className="site-header">
-        <a className="brand" href="#inicio" aria-label="Ir al inicio"><span className="brand-mark"><Sparkles size={17} /></span><span>Daniela Palma Carrasco</span></a>
+        <a className="brand" href="#inicio" aria-label="Ir al inicio"><span className="brand-mark"><Sparkles size={17} /></span><span>{siteContent.professional.name}</span></a>
         <nav aria-label="Navegación principal"><a href="#tratamientos">Tratamientos</a><a href="#contacto">Contacto</a><a className="button button-small" href="#contacto">Quiero consultar</a></nav>
       </header>
 
       <section className="hero" id="inicio">
         <div className="hero-copy">
-          <p className="eyebrow"><Heart size={17} /> Atención cercana y personalizada</p>
-          <h1>Una expresión fresca, cuidando lo que te hace única.</h1>
-          <p className="hero-description">Enfermera dedicada a medicina estética y urgencia. Orientación profesional en tratamientos con toxina botulínica, con evaluación individual y acompañamiento antes y después de cada procedimiento.</p>
-          <div className="hero-actions"><a className="button" href="#contacto">Solicitar orientación</a><a className="text-link" href={whatsappUrl}>Hablar por WhatsApp</a></div>
+          <p className="eyebrow"><Heart size={17} /> {siteContent.hero.eyebrow}</p>
+          <h1>{siteContent.hero.title}</h1>
+          <p className="hero-description">{siteContent.hero.description}</p>
+          <div className="hero-actions"><a className="button" href="#contacto">Solicitar orientación</a><a className="text-link" href={whatsappBaseUrl} target="_blank" rel="noreferrer">Hablar por WhatsApp</a></div>
           <div className="trust-list" aria-label="Características del servicio"><span><ShieldCheck size={17} /> Evaluación previa</span><span><MessageCircle size={17} /> Seguimiento posterior</span><span><Stethoscope size={17} /> Enfermera</span></div>
         </div>
-        <figure className="portrait"><img src="/daniela-palma-profesional.png" alt="Retrato profesional de Daniela Palma Carrasco" /><figcaption><BadgeCheck size={18} /> Daniela Palma Carrasco · Enfermera</figcaption></figure>
+        <figure className="portrait"><img src="/daniela-palma-profesional.webp" alt={`Retrato profesional de ${siteContent.professional.name}`} /><figcaption><BadgeCheck size={18} /> {siteContent.professional.name} · {siteContent.professional.role}</figcaption></figure>
       </section>
 
       <section className="section" id="tratamientos">
         <p className="section-kicker">Tratamientos</p><h2>¿Para qué se utiliza la toxina botulínica?</h2>
         <p className="section-intro">Relaja determinados músculos de forma controlada y puede utilizarse con fines estéticos o funcionales. La indicación y los resultados esperables dependen de una evaluación profesional.</p>
-        <div className="services">{services.map(({ title, description, icon: Icon }) => <article className="service" key={title}><Icon size={22} /><h3>{title}</h3><p>{description}</p></article>)}</div>
+        <div className="services">{siteContent.services.map(({ id, title, description }) => { const Icon = serviceIcons[id]; return <article className="service" key={id}><Icon size={22} /><h3>{title}</h3><p>{description}</p></article>; })}</div>
         <div className="benefits" aria-label="Aspectos del tratamiento"><span><CheckCircle2 size={18} /> Aplicación sujeta a evaluación</span><span><Clock3 size={18} /> Resultados temporales y ajustables</span><span><MessageCircle size={18} /> Indicaciones y seguimiento</span></div>
       </section>
 
       <section className="section contact" id="contacto">
-        <div className="contact-copy"><p className="section-kicker">Primer contacto</p><h2>Conversemos sobre lo que buscas</h2><p>Déjanos tus datos básicos y disponibilidad. Daniela te contactará para orientar el siguiente paso; este formulario no reemplaza una evaluación clínica.</p><div className="contact-details"><span><Clock3 size={18} /> Respuesta dentro del horario de atención</span><span><LockKeyhole size={18} /> Datos usados solo para responder</span><a href={whatsappUrl}><MessageCircle size={18} /> WhatsApp: +56 9 7716 0198</a></div></div>
-        <form onSubmit={handleSubmit}>
+        <div className="contact-copy"><p className="section-kicker">Primer contacto</p><h2>Conversemos sobre lo que buscas</h2><p>Completa tus datos básicos y luego prepararemos la consulta para enviarla mediante WhatsApp. No incluyas diagnósticos, fotografías ni antecedentes médicos sensibles.</p><div className="contact-details"><span><Clock3 size={18} /> Respuesta dentro del horario de atención</span><span><LockKeyhole size={18} /> La web no almacena la consulta</span><a href={whatsappBaseUrl} target="_blank" rel="noreferrer"><MessageCircle size={18} /> WhatsApp: {siteContent.contact.whatsappDisplay}</a></div></div>
+        <form onSubmit={handleSubmit} noValidate>
+          <div className="honeypot" aria-hidden="true"><label>Deja este campo vacío<input name="sitio_web" tabIndex={-1} autoComplete="off" /></label></div>
           <div className="form-grid">
-            <label>Nombre<input required name="nombre" autoComplete="name" placeholder="Tu nombre" /></label>
-            <label>WhatsApp<input required name="telefono" autoComplete="tel" inputMode="tel" placeholder="+56 9 …" /></label>
-            <label>¿Qué te interesa?<select required name="interes" defaultValue=""><option value="" disabled>Selecciona una opción</option><option>Aplicación facial</option><option>Bruxismo</option><option>Hiperhidrosis</option><option>Cuello</option><option>Otra consulta</option></select></label>
-            <label>Horario preferido<select name="horario" defaultValue="Indistinto"><option>Mañana</option><option>Tarde</option><option>Indistinto</option></select></label>
-            <label className="full">Mensaje opcional<textarea name="mensaje" placeholder="Cuéntanos brevemente qué información necesitas. No incluyas antecedentes médicos sensibles." /></label>
-            <label className="consent full"><input required type="checkbox" /> <span>Acepto que me contacten para responder esta consulta.</span></label>
-            <button className="button submit full" type="submit">Enviar consulta</button>
+            <label htmlFor="nombre">Nombre<input id="nombre" required name="nombre" autoComplete="name" maxLength={60} placeholder="Tu nombre" /></label>
+            <label htmlFor="telefono">WhatsApp<input id="telefono" required name="telefono" autoComplete="tel" inputMode="tel" maxLength={24} pattern="[+0-9 ()-]{8,24}" placeholder="+56 9 …" aria-describedby="telefono-ayuda" /><small id="telefono-ayuda">Incluye el código de país si corresponde.</small></label>
+            <label htmlFor="interes">¿Qué te interesa?<select id="interes" required name="interes" defaultValue=""><option value="" disabled>Selecciona una opción</option>{siteContent.services.map(service => <option key={service.id} value={service.title}>{service.title}</option>)}<option>Otra consulta</option></select></label>
+            <label htmlFor="horario">Horario preferido<select id="horario" name="horario" defaultValue="Indistinto"><option>Mañana</option><option>Tarde</option><option>Indistinto</option></select></label>
+            <label className="full" htmlFor="mensaje">Mensaje general opcional<textarea id="mensaje" name="mensaje" maxLength={280} aria-describedby="mensaje-ayuda" placeholder="Cuéntanos brevemente qué información general necesitas." /><small id="mensaje-ayuda">Máximo 280 caracteres. No incluyas antecedentes médicos sensibles.</small></label>
+            <label className="consent full"><input required name="consentimiento" type="checkbox" /> <span>Acepto que estos datos se utilicen para preparar el mensaje que enviaré por WhatsApp. He leído el <a href="/privacidad">borrador de privacidad</a>.</span></label>
+            <button className="button submit full" type="submit">Continuar en WhatsApp</button>
           </div>
-          <p className="form-status" aria-live="polite">{sent ? 'Demostración: la consulta quedó lista. Aún no se envían datos.' : ''}</p>
-          <p className="form-note">Primera versión: el formulario es demostrativo y no almacena información.</p>
+          <p className={`form-status ${status === 'error' ? 'form-error' : ''}`} role="status" aria-live="polite">{status === 'ready' ? 'Consulta preparada. Revisa el mensaje en WhatsApp antes de enviarlo.' : status === 'error' ? 'Revisa los campos obligatorios e inténtalo nuevamente.' : ''}</p>
+          <p className="form-note">El envío sólo se completa cuando confirmas el mensaje dentro de WhatsApp.</p>
         </form>
       </section>
-      <footer><span>© 2026 Daniela Palma Carrasco · Enfermera</span><span>Medicina estética y urgencia · +56 9 7716 0198</span></footer>
+      <footer><span>© 2026 {siteContent.professional.name} · {siteContent.professional.role}</span><span>{siteContent.professional.specialty} · {siteContent.contact.whatsappDisplay}</span><span className="footer-links"><a href="/privacidad">Privacidad</a><a href="/terminos">Condiciones</a></span></footer>
     </main>
   );
 }
-
